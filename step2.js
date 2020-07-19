@@ -176,9 +176,9 @@ const urls = [{
         const filteredNodes = [];
         let indentation = 1;
 
-        function parseLiNodes() {
+        function parseLiNodes(liNodes) {
           for (const liNode of liNodes) {
-            for (const childNode of liNode.children) {
+            for (const childNode of liNode.childNodes) {
               // filteredNodes.push(aNode.nodeName);
               if (childNode.nodeName === 'A') {
                 filteredNodes.push({
@@ -188,9 +188,23 @@ const urls = [{
                 });
               }
               else if (childNode.nodeName === 'UL') {
-                // indentation++;
-                // parseLiNodes(childNode.querySelectorAll('li'));
-                // indentation--;
+                indentation++;
+                parseLiNodes(childNode.querySelectorAll('li'));
+                indentation--;
+              }
+              else if (childNode.nodeType === Node.TEXT_NODE) {
+                let text = childNode.nodeValue.trim();
+                if ([
+                  'Language and Compiler',
+                  'Editor Features',
+                  'Compiler and Language',
+                  'Editor Tooling',
+                ].includes(text)) {
+                  filteredNodes.push({
+                    text: text,
+                    indentation: indentation,
+                  });
+                }
               }
             }
           }
@@ -203,10 +217,18 @@ const urls = [{
       });
 
       console.log(`* [${url.text}](${url.href}) ${date}`);
-      // console.log(ul);
       for (const link of links) {
-        if (link.href.startsWith('#')) {
-          console.log(`${'    '.repeat(link.indentation)}* [${link.text}](${link.href})`);
+        if (link.text) {
+          if (link.href && link.href.startsWith('#')) {
+            console.log(`${'    '.repeat(link.indentation)}* [${link.text}](${url.href}${link.href})`);
+          }
+          else if (link.href === undefined) {
+            console.log(`${'    '.repeat(link.indentation)}* ${link.text}`);
+          }
+        }
+        else {
+          // For debugging purposes
+          console.log(link);
         }
       }
     }
