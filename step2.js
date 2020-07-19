@@ -155,18 +155,15 @@ const urls = [{
 }];
 
 (async () => {
-  const links = [];
+  // const browser = await puppeteer.launch({ devtools: true });
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   for (const url of urls) {
 
     try {
-      // console.log(url);
       await page.goto(url.href);
 
       const date = await page.evaluate(() => {
-        // Note 1: here you can use querySelectorAll()
-        // Note 2: eval can't return non-serializable data, so, you need to JSON.stringify() to receive objects.
         const nodes = document.querySelectorAll('.entry-meta');
         const filteredNodes = [];
         for (const node of nodes) {
@@ -175,26 +172,47 @@ const urls = [{
         return filteredNodes;
       });
 
-      const ul = await page.evaluate(() => {
-        // Note 1: here you can use querySelectorAll()
-        // Note 2: eval can't return non-serializable data, so, you need to JSON.stringify() to receive objects.
-        const nodes = document.querySelectorAll('ul');
+      const links = await page.evaluate(() => {
         const filteredNodes = [];
-        for (const node of nodes) {
-          filteredNodes.push(node.innerText);
+        let indentation = 1;
+
+        function parseLiNodes() {
+          for (const liNode of liNodes) {
+            for (const childNode of liNode.children) {
+              // filteredNodes.push(aNode.nodeName);
+              if (childNode.nodeName === 'A') {
+                filteredNodes.push({
+                  href: childNode.getAttribute('href'),
+                  text: childNode.innerText,
+                  indentation: indentation,
+                });
+              }
+              else if (childNode.nodeName === 'UL') {
+                // indentation++;
+                // parseLiNodes(childNode.querySelectorAll('li'));
+                // indentation--;
+              }
+            }
+          }
         }
+
+        // Use a selector that only queries the first level of LI elements
+        const liNodes = document.querySelectorAll('#main div > ul > li');
+        parseLiNodes(liNodes);
         return filteredNodes;
       });
 
-      // console.log(`* [${url.text}](${url.href}) ${date}`);
-      // await page.screenshot({ path: 'example.png' });
-      console.log(ul);
+      console.log(`* [${url.text}](${url.href}) ${date}`);
+      // console.log(ul);
+      for (const link of links) {
+        if (link.href.startsWith('#')) {
+          console.log(`${'    '.repeat(link.indentation)}* [${link.text}](${link.href})`);
+        }
+      }
     }
     catch (error) {
       console.error(error);
     }
-
   }
-  console.log(links);
   await browser.close();
 })();
