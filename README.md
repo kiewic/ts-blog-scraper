@@ -1,4 +1,4 @@
-# TypeScript blog sraper
+# TypeScript blog scraper
 
 ```
 node step1.js
